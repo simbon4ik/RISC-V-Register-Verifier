@@ -1,7 +1,7 @@
 from riscv_reg_block import reg_access
 
 REGISTER_SPACE_START = 0x0000
-REGISTER_SPACE_END = 0x16
+REGISTER_SPACE_END = 0xFFFF
 
 MIN_VALUE = 0x0000
 MAX_VALUE = 0xFFFF
