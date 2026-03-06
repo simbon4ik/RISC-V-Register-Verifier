@@ -23,38 +23,38 @@ def riscv_reg_access(addr: int, data: int, rw: str, bus_width: int = 32) -> dict
 Диапазон адресов: 0x0000–0xFFFF (по SystemRDL‑спецификации).
 
 Известные баги (которые нужно поймать):
-- Register Misread: addr = 0x0042 → stale data (FSM не обновляет значение).
-- Bus Deadlock: write(0x0013) → read(0x0077) без ACK (зависание шины/ФСМ).
+- Register Misread: addr = 0x0042 → stale data (FSM не обновляет значение),
+- Bus Deadlock: write(0x0013) → read(0x0077) без ACK (зависание шины/ФСМ),
 - Glitch: bus_width = 64 на 32‑битном адресном пространстве → переполнение/обрезка данных.
 
 ## Цели и метрики
 Задача — по методике YADRO: 
 - тестплан по SystemRDL,
-- покрытие
+- покрытие,
 - багрепорт.
 
 Цели:
-- Register Coverage: протестировать ≥ 94% доступных регистров.
-- Transition Coverage: покрыть ≥ 89% read/write‑последовательностей (переходов).
-- Bugs Reported: обнаружить 3/3 известных багов с воспроизводимыми тестами и severity.
+- Register Coverage: протестировать ≥ 94% доступных регистров,
+- Transition Coverage: покрыть ≥ 89% read/write‑последовательностей (переходов),
+- Bugs Reported: обнаружить 3/3 известных багов с воспроизводимыми тестами и severity,
 - Code quality: pylint score ≥ 8.5/10, адекватная структура и регрессия через pytest.
 
 ## Роли и этапы
 
 Test Sequencer Engineer:
-- Парсит SystemRDL.
-- Генерирует random/directed тесты по всем адресам (до 65k обращений).
-- Обеспечивает покрытие регистров ≥ 94%.
+- парсит SystemRDL,
+- генерирует random/directed тесты по всем адресам (до 65k обращений),
+- обеспечивает покрытие регистров ≥ 94%.
 
 Coverage Engineer:
-- Считает покрытие регистров и переходов read→write.
-- Строит/анализирует FSM на основе наблюдаемого поведения (networkx).
-- Формализует триггеры для багов.
+- считает покрытие регистров и переходов read→write,
+- строит/анализирует FSM на основе наблюдаемого поведения (networkx),
+- формализует триггеры для багов.
 
 Verification GUI Engineer
-- Делает Streamlit‑дашборд.
-- Heatmap по регистрах (покрытие/статус).
-- Граф FSM (networkx + Plotly), отображение deadlock‑состояний.
+- делает Streamlit‑дашборд,
+- heatmap по регистрах (покрытие/статус),
+- граф FSM (networkx + Plotly), отображение deadlock‑состояний.
 
 ## Технологический стек
 
