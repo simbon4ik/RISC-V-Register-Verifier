@@ -1,14 +1,12 @@
-#from results.reg_access import reg_access
 from riscv_reg_block import reg_access
 
 REGISTER_SPACE_START = 0x0000
 REGISTER_SPACE_END = 0xFFFF
 
 class Note:
-    def __init__(self, addr, value, status, ack):
+    def __init__(self, addr, value, ack):
         self.addr = addr
         self.reg_value = value
-        self.status = status
         self.ack = ack
 
 
@@ -21,7 +19,6 @@ def reg_relation(addr, write_value=0, mode="read"):
         
         return {
             'reg_value': resp['reg_value'],
-            'status': resp['status'],
             'ack': resp['ack']
         }
 
@@ -40,8 +37,9 @@ def scan_register_space():
     
     for addr in range(REGISTER_SPACE_START, REGISTER_SPACE_END + 1):
         try:
+
             resp = reg_relation(addr, 0, "read")            
-            reg = Note(addr, resp["reg_value"], resp["status"], resp["ack"])
+            reg = Note(addr, resp["reg_value"], resp["ack"])
             found_registers.append(reg)
 
         except Exception as e:
@@ -54,7 +52,7 @@ def scan_register_space():
     for addr in range(REGISTER_SPACE_START, REGISTER_SPACE_END + 1):
         try:
             resp = reg_relation(addr, addr, "write")            
-            reg = Note(addr, resp["reg_value"], resp["status"], resp["ack"])
+            reg = Note(addr, resp["reg_value"], resp["ack"])
             found_registers.append(reg)
         except Exception as e:
             errors.append((addr, str(e)))
@@ -66,7 +64,7 @@ def scan_register_space():
     for addr in range(REGISTER_SPACE_START, REGISTER_SPACE_END + 1):
         try:
             resp = reg_relation(addr, 0, "read")            
-            reg = Note(addr, resp["reg_value"], resp["status"], resp["ack"])
+            reg = Note(addr, resp["reg_value"], resp["ack"])
             found_registers.append(reg)
         except Exception as e:
             errors.append((addr, str(e)))
@@ -77,14 +75,15 @@ def scan_register_space():
 
 def read_to_file(file_name, found_registers, errors):
     with open(file_name, "w") as f:
-        f.write("Регистры без ошибок ack")
+        f.write("Registers without ack error\n")
         for reg in found_registers:        
             if reg.ack: 
-                f.write(f"ADDR=0x{reg.addr} VAL={reg.reg_value} STATUS={reg.status} ACK={reg.ack}\n")
-        f.write("Регистры с ошибкой ack")
+                f.write(f"ADDR=0x{reg.addr} VAL={reg.reg_value} ACK={reg.ack}\n")
+        f.write("Registers with ack error\n")
         for reg in found_registers:
             if reg.ack == False: 
-                f.write(f"ADDR=0x{reg.addr} VAL={reg.reg_value} STATUS={reg.status} ACK={reg.ack}\n")
+                f.write(f"ADDR=0x{reg.addr} VAL={reg.reg_value} ACK={reg.ack}\n")
+        f.write("Registers with exception\n")
         for addr, err in errors:
             f.write(f"ADDR=0x{addr} ERROR={err}\n")  
         
