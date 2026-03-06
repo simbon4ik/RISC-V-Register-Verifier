@@ -56,11 +56,11 @@ Verification GUI Engineer
 
 ## Технологический стек
 
-Python 3.x
-systemrdl-compiler — парсинг SystemRDL‑спецификации регистров.
-pytest, pytest-cov — тесты и покрытие.
-networkx — построение FSM и анализ графа.
-streamlit + plotly — верификационный GUI (heatmap, FSM‑граф).
+- Python 3.x
+- systemrdl-compiler — парсинг SystemRDL‑спецификации регистров.
+- pytest, pytest-cov — тесты и покрытие.
+- networkx — построение FSM и анализ графа.
+- streamlit + plotly — верификационный GUI (heatmap, FSM‑граф).
 
 ## Установка и виртуальное окружение
 Клонирование репозитория
