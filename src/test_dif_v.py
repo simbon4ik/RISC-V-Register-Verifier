@@ -26,7 +26,7 @@ def scan_register_read_after_diff_write(REGISTER_SPACE_START, REGISTER_SPACE_END
                         "bug_type": "bug with read after write",
                         "trigger_pattern": "write_bug",
                         "description":  "After writing reg doesn't consist correct value",
-                        "FSM": ["Stating Read after Different Write test", "WRITE", "READ", "INCORRECT READ AND WRITE"]
+                        "FSM": ["Starting Read after Different Write test", "WRITE", "READ", "INCORRECT READ AND WRITE"]
                         })
                     break
         except Exception as e:

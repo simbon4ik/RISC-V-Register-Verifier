@@ -7,8 +7,12 @@ from .views import (
     render_bugs_table,
     render_fsm_graph,
     render_filters,
+    render_bug_selector,
+)
+from .interactive import (
     render_register_access,
 )
+
 
 
 def render():
