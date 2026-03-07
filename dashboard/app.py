@@ -32,8 +32,8 @@ def render():
 
     render_region_heatmap(df_filtered)
 
-    df_bugs = load_bugs_data()
-    df_bugs_view = render_bugs_table(df_bugs, bug_type_filter, region_filter)
+    # df_bugs = load_bugs_data()
+    df_bugs_view = render_bugs_table(df_events, bug_type_filter, region_filter)
     selected_bug_idx = render_bug_selector(df_bugs_view)
     render_fsm_graph(
         df_bugs=df_bugs_view,

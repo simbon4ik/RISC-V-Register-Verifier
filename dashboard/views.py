@@ -42,7 +42,7 @@ def render_sidebar():
     st.sidebar.header(SIDEBAR_HEADER)
     if st.sidebar.button(SIDEBAR_RUN_BUTTON):
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        
+
         st.sidebar.write(f"{SIDEBAR_RUN_MESSAGE} {now}")
 
 
@@ -84,7 +84,7 @@ def render_bugs_table(
         elif "type" in df.columns:
             df = df[df["type"].isin(bug_type_filter)]
 
-    st.dataframe(df, use_container_width=True)
+    st.dataframe(df, width="stretch")
     return df
 
 
@@ -112,7 +112,7 @@ def render_region_heatmap(df_events: pd.DataFrame):
     )
 
     st.subheader(REGION_HEATMAP_TITLE)
-    st.plotly_chart(fig, use_container_width=True, key="region_heatmap")
+    st.plotly_chart(fig, width="stretch", key="region_heatmap")
 
 
 def _get_bug_type(
@@ -269,7 +269,7 @@ def render_fsm_graph(
         height=FSM_FIG_HEIGHT,
     )
 
-    st.plotly_chart(fig, use_container_width=True, key=key)
+    st.plotly_chart(fig, width="stretch", key=key)
 
 
 def render_filters(df_events: pd.DataFrame):
