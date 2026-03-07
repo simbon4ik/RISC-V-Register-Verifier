@@ -26,7 +26,7 @@ def scan_register_read_after_diff_write(
             if reg.reg_value != value:
                 info_of_bug.append({
                     "addr": reg.addr,
-                    "bug_type": "bag with write different values",
+                    "bug_type": "bug with write different values",
                     "trigger_pattern": "write random values",
                     "description": f"correct value = {value:04x}, real value = {reg.reg_value:04x}",
                     "FSM": [
