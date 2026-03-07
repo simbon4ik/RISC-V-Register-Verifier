@@ -4,7 +4,7 @@ from .config import Note
 MIN_VALUE = 0x0000
 MAX_VALUE = 0xFFFF
 
-def scan_register_read_after_diff_write(REGISTER_SPACE_START, REGISTER_SPACE_END):
+def scan_register_read_afster_diff_write(REGISTER_SPACE_START, REGISTER_SPACE_END):
     
     reg_with_dif_beh = []
     errors = []

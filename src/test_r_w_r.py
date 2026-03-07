@@ -1,5 +1,5 @@
-from riscv_reg_block import reg_access
-from config import Note
+from .riscv_reg_block import reg_access
+from .config import Note
 
 VALUE = -1
 

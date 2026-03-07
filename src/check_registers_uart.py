@@ -1,4 +1,4 @@
-from riscv_reg_block import reg_access
+from .riscv_reg_block import reg_access
 
 RBR_ADDR = 0x0000
 FCR_ADDR = 0x0018

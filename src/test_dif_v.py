@@ -1,4 +1,4 @@
-from riscv_reg_block import reg_access
+from .riscv_reg_block import reg_access
 
 REGISTER_SPACE_START = 0x0000
 REGISTER_SPACE_END = 0xFFFF
