@@ -1,3 +1,5 @@
+"""Streamlit entrypoint for the RISC‑V Register Verifier dashboard."""
+
 from .data import load_register_events
 from .views import (
     init_page,
@@ -7,15 +9,12 @@ from .views import (
     render_bugs_table,
     render_fsm_graph,
     render_filters,
-    render_bug_selector,
 )
-from .interactive import (
-    render_register_access,
-)
+from .interactive import render_register_access
 
 
-
-def render():
+def render() -> None:
+    """Render main dashboard layout and all widgets."""
     init_page()
     render_sidebar()
 
@@ -33,7 +32,7 @@ def render():
     if bug_type_filter:
         df_filtered = df_filtered[
             df_filtered["bug_type"].isin(bug_type_filter)
-            ]
+        ]
 
     if region_filter:
         df_filtered = df_filtered[df_filtered["region"].isin(region_filter)]

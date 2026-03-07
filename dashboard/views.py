@@ -1,10 +1,13 @@
-import streamlit as st
-import plotly.express as px
-import plotly.graph_objects as go
-import pandas as pd
-from .data import addr_to_region
+"""Streamlit view helpers for layout, tables, and plots."""
+
 from datetime import datetime
 
+import pandas as pd
+import plotly.express as px
+import plotly.graph_objects as go
+import streamlit as st
+
+from .data import addr_to_region
 from .config import (
     APP_TITLE,
     PAGE_LAYOUT,
@@ -30,19 +33,22 @@ from .config import (
 )
 
 
-def init_page():
+def init_page() -> None:
+    """Configure base page settings and show title."""
     st.set_page_config(page_title=APP_TITLE, layout=PAGE_LAYOUT)
     st.title(APP_TITLE)
 
 
-def render_sidebar():
+def render_sidebar() -> None:
+    """Render sidebar header and test run button."""
     st.sidebar.header(SIDEBAR_HEADER)
     if st.sidebar.button(SIDEBAR_RUN_BUTTON):
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         st.sidebar.write(f"{SIDEBAR_RUN_MESSAGE} {now}")
 
 
-def render_kpi(df_events: pd.DataFrame):
+def render_kpi(df_events: pd.DataFrame) -> None:
+    """Render high‑level KPI metrics based on events."""
     unique_regs = df_events["addr"].nunique()
     bugs_total = len(df_events)
     bug_patterns = df_events["bug_type"].nunique()
@@ -58,13 +64,15 @@ def render_bugs_table(
     bug_type_filter: list[str] | None = None,
     region_filter: list[str] | None = None,
 ) -> pd.DataFrame:
+    """Render detailed bugs table with grouping and filters."""
     st.subheader(BUGS_TABLE_TITLE)
 
     df = df_bugs.copy()
 
     if "region" not in df.columns and "addr" in df.columns:
+
         def addr_hex_to_region(addr_str: str) -> str:
-            first_addr = str(addr_str).split("/")[0]
+            first_addr = str(addr_str).split("/", maxsplit=1)[0]
             addr_int = int(first_addr, 16)
             return addr_to_region(addr_int)
 
@@ -106,6 +114,7 @@ def render_bugs_table(
                     .reset_index(name="count")
                     .sort_values("count", ascending=False)
                 )
+
                 agg_total = agg["count"].sum()
                 agg["share"] = (agg["count"] / agg_total * 100).round(1)
 
@@ -128,7 +137,8 @@ def render_bugs_table(
     return df
 
 
-def render_region_heatmap(df_events: pd.DataFrame):
+def render_region_heatmap(df_events: pd.DataFrame) -> None:
+    """Render heatmap of bugs per region and type."""
     df = df_events.copy()
     df_counts = (
         df.groupby(["region", "bug_type"])
@@ -148,49 +158,56 @@ def render_region_heatmap(df_events: pd.DataFrame):
         xaxis_title=REGION_HEATMAP_X_TITLE,
         yaxis_title=REGION_HEATMAP_Y_TITLE,
         coloraxis_colorbar_title=REGION_HEATMAP_COLORBAR_TITLE,
-        yaxis=dict(autorange="reversed"),
+        yaxis={"autorange": "reversed"},
     )
 
     st.subheader(REGION_HEATMAP_TITLE)
     st.plotly_chart(fig, width="stretch", key="region_heatmap")
 
 
-def _build_node_trace_for_path(path: list[str]) -> go.Scatter:
+def _build_node_trace_for_path(
+        path: list[str]
+        ) -> tuple[go.Scatter, dict[str, tuple[float, float]]]:
+    """Build node trace and positions for a given FSM path."""
     states = list(dict.fromkeys(path))
     positions = {s: (i, 0.0) for i, s in enumerate(states)}
 
     node_x, node_y, node_colors, node_text = [], [], [], []
-    n = len(states)
+    n_states = len(states)
 
-    for idx, s in enumerate(states):
-        x, y = positions[s]
-        node_x.append(x)
-        node_y.append(y)
-        node_text.append(s)
+    for idx, state in enumerate(states):
+        x_coord, y_coord = positions[state]
+        node_x.append(x_coord)
+        node_y.append(y_coord)
+        node_text.append(state)
 
         if idx == 0:
             color = "#2ca02c"
-        elif idx == n - 1:
+        elif idx == n_states - 1:
             color = "#d62728"
         else:
             color = FSM_NODE_COLOR
 
         node_colors.append(color)
 
-    return go.Scatter(
-        x=node_x,
-        y=node_y,
-        mode="markers",
-        marker=dict(size=FSM_NODE_SIZE, color=node_colors),
-        text=node_text,
-        hoverinfo="text",
-        showlegend=False,
-    ), positions
+    return (
+        go.Scatter(
+            x=node_x,
+            y=node_y,
+            mode="markers",
+            marker={"size": FSM_NODE_SIZE, "color": node_colors},
+            text=node_text,
+            hoverinfo="text",
+            showlegend=False,
+        ),
+        positions,
+    )
 
 
 def _build_edge_trace_for_path(
-        path: list[str], positions: dict[str, tuple[float, float]]
-        ) -> go.Scatter:
+    path: list[str], positions: dict[str, tuple[float, float]]
+) -> go.Scatter:
+    """Build edge trace for a given FSM path and positions."""
     edge_x, edge_y = [], []
     for s0, s1 in zip(path, path[1:]):
         x0, y0 = positions[s0]
@@ -202,7 +219,7 @@ def _build_edge_trace_for_path(
         x=edge_x,
         y=edge_y,
         mode="lines",
-        line=dict(color=FSM_EDGE_COLOR, width=FSM_EDGE_WIDTH),
+        line={"color": FSM_EDGE_COLOR, "width": FSM_EDGE_WIDTH},
         hoverinfo="none",
         showlegend=False,
     )
@@ -212,7 +229,8 @@ def render_fsm_graph(
     df_bugs: pd.DataFrame | None = None,
     title: str = FSM_TITLE,
     key: str = "fsm_graph",
-):
+) -> None:
+    """Render FSM path visualization for a selected bug."""
     st.subheader(title)
 
     if df_bugs is None or df_bugs.empty or "FSM" not in df_bugs.columns:
@@ -225,6 +243,7 @@ def render_fsm_graph(
         options=bug_indices,
         key="fsm_bug_id_selector",
     )
+
     row = df_bugs.loc[selected_idx]
 
     fsm_path = row.get("FSM")
@@ -237,8 +256,8 @@ def render_fsm_graph(
 
     fig = go.Figure(data=[edge_trace, node_trace])
     fig.update_layout(
-        xaxis=dict(visible=False),
-        yaxis=dict(visible=False),
+        xaxis={"visible": False},
+        yaxis={"visible": False},
         margin=FSM_MARGIN,
         height=FSM_FIG_HEIGHT,
     )
@@ -249,7 +268,8 @@ def render_fsm_graph(
 def render_filters(
     all_bug_types: list[str],
     all_regions: list[str],
-):
+) -> tuple[list[str], list[str]]:
+    """Render sidebar filters for bug types and regions."""
     st.sidebar.subheader("Filters")
 
     bug_type_filter = st.sidebar.multiselect(
@@ -268,6 +288,7 @@ def render_filters(
 
 
 def render_bug_selector(df_bugs: pd.DataFrame | None) -> int | None:
+    """Render sidebar selector for bugs and return selected index."""
     if df_bugs is None or df_bugs.empty:
         return None
 

@@ -1,3 +1,5 @@
+"""Configuration constants for the RISC‑V Register Verifier dashboard."""
+
 APP_TITLE = "RISC‑V Register Verifier Dashboard"
 PAGE_LAYOUT = "wide"
 
@@ -70,7 +72,7 @@ FSM_NODE_COLOR = "#1f77b4"
 FSM_EDGE_COLOR = "gray"
 FSM_EDGE_WIDTH = 2
 FSM_FIG_HEIGHT = 400
-FSM_MARGIN = dict(l=20, r=20, t=20, b=20)
+FSM_MARGIN = {"l": 20, "r": 20, "t": 20, "b": 20}
 
 SIDEBAR_HEADER = "Test runner"
 SIDEBAR_MODE_LABEL = "Mode"
