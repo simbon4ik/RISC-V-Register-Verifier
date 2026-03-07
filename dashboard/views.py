@@ -4,7 +4,6 @@ import plotly.graph_objects as go
 import pandas as pd
 from .data import addr_to_region
 from datetime import datetime
-from src.riscv_reg_block import reg_access
 
 from .config import (
     APP_TITLE,
