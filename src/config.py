@@ -1,12 +1,37 @@
+"""
+Module for definition Note and read_to_file
+"""
 class Note:
+    """
+    Class for reg_access
+    """
     def __init__(self, addr: int, value: int, ack: bool):
         self.addr = addr
         self.reg_value = value
         self.ack = ack
+    def get_addr(self):
+        """
+        Get addr
+        """
+        return self.addr
+    def get_reg_value(self):
+        """
+        Get reg_value
+        """
+        return self.reg_value
+    def get_ack(self):
+        """
+        Get ack
+        """
+        return self.ack
+
 
 
 def read_to_file(file_name, found_registers, errors):
-    with open(file_name, "w") as f:
+    """
+    Function for read to file
+    """
+    with open(file_name, "w", encoding="utf-8") as f:
         f.write("Registers without ack error\n")
         for reg in found_registers:
             if reg.ack:
