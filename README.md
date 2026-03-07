@@ -101,5 +101,11 @@ streamlit run main.py
 - FSM‑граф в духе ТЗ — это граф ваших операций (`read`, `write`, последовательности) на основе логов тестов, собранный через `networkx`; восстанавливать реальный внутренний FSM DUT не требуется.
 
 ## Метрики
-
+Heatmap (2*5)
 <img width="1280" height="448" alt="image" src="https://github.com/user-attachments/assets/17b87855-81c8-4e9b-8fdc-8f7912583cdf" />
+Pylinт score
+...> python -m pylint .\dashboard\ .\src\         
+
+-------------------------------------------------------------------
+Your code has been rated at 10.00/10 (previous run: 9.94/10, +0.06)
+
