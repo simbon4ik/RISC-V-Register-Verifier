@@ -42,7 +42,6 @@ def render_sidebar():
     st.sidebar.header(SIDEBAR_HEADER)
     if st.sidebar.button(SIDEBAR_RUN_BUTTON):
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        
         st.sidebar.write(f"{SIDEBAR_RUN_MESSAGE} {now}")
 
 
@@ -67,12 +66,14 @@ def render_bugs_table(
     df = df_bugs.copy()
 
     if "region" not in df.columns and "addr" in df.columns:
+
         def addr_hex_to_region(addr_str: str) -> str:
             first_addr = str(addr_str).split("/")[0]
             addr_int = int(first_addr, 16)
             return addr_to_region(addr_int)
 
         region_series = df["addr"].apply(addr_hex_to_region)
+        # делаем region первым столбцом
         df.insert(0, "region", region_series)
 
     if region_filter and "region" in df.columns:
@@ -84,7 +85,7 @@ def render_bugs_table(
         elif "type" in df.columns:
             df = df[df["type"].isin(bug_type_filter)]
 
-    st.dataframe(df, use_container_width=True)
+    st.dataframe(df, width="stretch")
     return df
 
 
@@ -112,7 +113,7 @@ def render_region_heatmap(df_events: pd.DataFrame):
     )
 
     st.subheader(REGION_HEATMAP_TITLE)
-    st.plotly_chart(fig, use_container_width=True, key="region_heatmap")
+    st.plotly_chart(fig, width="stretch", key="region_heatmap")
 
 
 def _get_bug_type(
@@ -157,15 +158,17 @@ def _build_node_trace(
     positions,
     highlighted_states: set[str],
 ) -> go.Scatter:
-    node_x, node_y, node_text, node_colors = zip(*[
-        (
-            positions[s][0],
-            positions[s][1],
-            s,
-            "#d62728" if s in highlighted_states else FSM_NODE_COLOR,
-        )
-        for s in states
-    ])
+    node_x, node_y, node_text, node_colors = zip(
+        *[
+            (
+                positions[s][0],
+                positions[s][1],
+                s,
+                "#d62728" if s in highlighted_states else FSM_NODE_COLOR,
+            )
+            for s in states
+        ]
+    )
 
     return go.Scatter(
         x=node_x,
@@ -253,7 +256,7 @@ def render_fsm_graph(
     bug_type_value = _get_bug_type(df_bugs, selected_bug_idx)
     highlighted_states, highlighted_edges = _get_highlighted_elements(
         bug_type_value
-        )
+    )
 
     node_trace = _build_node_trace(states, positions, highlighted_states)
     edge_trace, edge_hi_trace, edge_text = _build_edge_traces(
@@ -269,28 +272,26 @@ def render_fsm_graph(
         height=FSM_FIG_HEIGHT,
     )
 
-    st.plotly_chart(fig, use_container_width=True, key=key)
+    st.plotly_chart(fig, width="stretch", key=key)
 
 
-def render_filters(df_events: pd.DataFrame):
+def render_filters(
+    all_bug_types: list[str],
+    all_regions: list[str],
+):
     st.sidebar.subheader("Filters")
 
-    bug_types = sorted(df_events["bug_type"].unique())
     bug_type_filter = st.sidebar.multiselect(
         "Bug types",
-        options=bug_types,
-        default=bug_types,
+        options=all_bug_types,
+        default=all_bug_types,
     )
 
-    if "region" in df_events.columns:
-        regions = sorted(df_events["region"].unique())
-        region_filter = st.sidebar.multiselect(
-            "Address regions",
-            options=regions,
-            default=regions,
-        )
-    else:
-        region_filter = []
+    region_filter = st.sidebar.multiselect(
+        "Address regions",
+        options=all_regions,
+        default=all_regions,
+    )
 
     return bug_type_filter, region_filter
 

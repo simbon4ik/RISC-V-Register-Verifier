@@ -2,6 +2,8 @@ APP_TITLE = "RISC‑V Register Verifier Dashboard"
 PAGE_LAYOUT = "wide"
 
 REGION_SIZE_BYTES = 0x0040
+REGISTER_SPACE_START = 0x0000
+REGISTER_SPACE_END = 0x000F
 
 TEST_MODES = ["Full regression", "Quick sanity"]
 

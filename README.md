@@ -77,12 +77,20 @@ from riscv_reg_block import reg_access
 
 ## Установка и виртуальное окружение
 
+Установка и виртуальное окружение
+
 ```bash
 git clone <url>
 cd <project_name>
 python -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
+```
+
+Запуск рендеринга (из корневой папки)
+
+```bash
+streamlit run main.py
 ```
 
 ## Clarifications

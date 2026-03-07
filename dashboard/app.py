@@ -17,26 +17,32 @@ def render():
 
     df_events = load_register_events()
 
-    bug_type_filter, region_filter = render_filters(df_events)
+    all_bug_types = sorted(df_events["bug_type"].unique())
+    all_regions = sorted(df_events["region"].unique())
+
+    bug_type_filter, region_filter = render_filters(
+        all_bug_types,
+        all_regions,
+    )
 
     df_filtered = df_events.copy()
     if bug_type_filter:
-        df_filtered = df_filtered[
-            df_filtered["bug_type"].isin(bug_type_filter)
-        ]
+        df_filtered = df_filtered[df_filtered["bug_type"].isin(bug_type_filter)]
 
     if region_filter:
         df_filtered = df_filtered[df_filtered["region"].isin(region_filter)]
 
     render_kpi(df_filtered)
-
     render_region_heatmap(df_filtered)
 
-    df_bugs = load_bugs_data()
-    df_bugs_view = render_bugs_table(df_bugs, bug_type_filter, region_filter)
+    df_bugs_view = render_bugs_table(df_events, bug_type_filter, region_filter)
     selected_bug_idx = render_bug_selector(df_bugs_view)
     render_fsm_graph(
         df_bugs=df_bugs_view,
         selected_bug_idx=selected_bug_idx,
         key="fsm_graph_selected_bug",
     )
+
+
+if __name__ == "__main__":
+    render()
