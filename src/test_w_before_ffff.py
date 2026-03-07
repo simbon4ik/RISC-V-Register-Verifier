@@ -4,12 +4,13 @@ from .config import Note
 MIN_VALUE = 0x0000
 MAX_VALUE = 0xFFFF
 
-def scan_register_read_afster_diff_write(REGISTER_SPACE_START, REGISTER_SPACE_END):
-    
-    reg_with_dif_beh = []
+
+def scan_register_read_after_diff_write(
+        REGISTER_SPACE_START, REGISTER_SPACE_END
+        ):
     errors = []
     info_of_bug = []
-    
+
     for addr in range(REGISTER_SPACE_START, REGISTER_SPACE_END):
         try:
             for value in range(MIN_VALUE, MAX_VALUE):
@@ -19,11 +20,16 @@ def scan_register_read_afster_diff_write(REGISTER_SPACE_START, REGISTER_SPACE_EN
                 if not reg.ack:
                     continue
                 if (reg.reg_value != value):
-                    info_of_bug.append({"addr":reg.addr, "bug_type": "bag with write different values", "trigger_pattern": "write random values", "description": f"correct value = {value}, real value = {reg.reg_value}"})
+                    info_of_bug.append({
+                        "addr": reg.addr,
+                        "bug_type": "bag with write different values",
+                        "trigger_pattern": "write random values",
+                        "description": f"correct value = {value}, real value = {reg.reg_value}"
+                        })
         except Exception as e:
             errors.append((addr, str(e)))
     return info_of_bug
-    
+
 '''
 #
 #     read_to_file("reg_with_dif_beh_before_ffff.txt", reg_with_dif_beh, errors)
