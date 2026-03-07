@@ -33,6 +33,7 @@ def scan_register_write_chain(
                 continue
             if reg.reg_value != last_value:
                 info_of_bug.append({
+                    "FSM": [f"WRITE_{NUM_WRITES}", "READ", "ERROR WITH READ AFTER WRITE"],
                     "addr": reg.addr,
                     "bug_type": "bug with write after write",
                     "trigger_pattern": "write overwrite",

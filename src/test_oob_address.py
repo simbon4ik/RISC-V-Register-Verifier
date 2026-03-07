@@ -16,6 +16,7 @@ def scan_addr_range(start, end):
              reg = Note(addr, resp["reg_value"], resp["ack"])
              if reg.ack:
                     info_of_bug.append({
+                        "FSM": ["READ", "ERROR: READING FROM INVALID ADDRESS"],
 						"addr": reg.addr,
 						"bug_type": "bug with addressing out of address space",
 						"trigger_pattern": "incorrect address",

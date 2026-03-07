@@ -15,15 +15,18 @@ def scan_register_fuzz_rw(
 
     for addr in range(REGISTER_SPACE_START, REGISTER_SPACE_END):
         try:
+            cnt = 0
             for _ in range(NUM_ITERATIONS):
                 value = random.randint(MIN_VALUE, MAX_VALUE)
-                resp = reg_access(addr, value, "write")     
-                resp = reg_access(addr, 0, "read")            
+                resp = reg_access(addr, value, "write")
+                resp = reg_access(addr, 0, "read")
+                cnt += 1         
                 reg = Note(addr, resp["reg_value"], resp["ack"])
                 if not reg.ack:
                     continue
                 if (reg.reg_value != value):
                     info_of_bug.append({
+                        "FSM" : [f"WRITE_READ_{cnt}", "ERROR WITH READ AFTER WRITE"],
                         "addr": reg.addr,
                         "bug_type": "bug with write random values",
                         "trigger_pattern": "write random values",
