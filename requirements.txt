@@ -8,12 +8,10 @@ pytest-cov>=5.0.0
 # Анализ и визуализация FSM / графов
 networkx>=3.2.0
 
-# Доступ к регистрам
-riscv-reg-block
-
 # Дашборд и графики
 streamlit>=1.32.0
 plotly>=5.18.0
+pandas>=1.5
 
 # Код‑стайл
 pylint>=3.0.0
