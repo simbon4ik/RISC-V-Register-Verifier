@@ -12,13 +12,13 @@
 Интерфейс доступа из Python по ТЗ:
 
 ```python
-def riscv_reg_access(addr: int, data: int, rw: str, bus_width: int = 32) -> dict:
+def reg_access(addr: int, data: int, rw: str) -> dict:
     """
     DUT: RISC-V Register File Block (МИФИ-Ядро)
     addr: 0x0000-0xFFFF
     rw: 'read' / 'write'
 
-    return: {'reg_value': int, 'status': str, 'ack': bool}
+    return: {'reg_value': int, 'ack': bool}
     """
 ```
 
@@ -80,10 +80,10 @@ from riscv_reg_block import reg_access
 Установка и виртуальное окружение
 
 ```bash
-git clone <url>
-cd <project_name>
+git clone https://github.com/simbon4ik/RISC-V-Register-Verifier.git
+cd RISC-V-Register-Verifier
 python -m venv venv
-source venv/bin/activate
+source venv/bin/activate (на Linux)
 pip install -r requirements.txt
 ```
 
@@ -95,7 +95,7 @@ streamlit run main.py
 
 ## Clarifications
 
-- Адресное пространство всегда `0x0000–0xFFFF` (65k адресов). Цифры `256`/`650` в ТЗ — лишь примеры для метрик coverage.
-- Готового `.rdl`‑файла не будет: модель регистров вы строите сами по результатам тестирования DUT, SystemRDL используется как методологический референс.
-- Streamlit предпочтителен для дашборда; React/Vue можно использовать только при локальном запуске и ясной визуализации покрытий и багов.
+- Адресное пространство всегда `0x0000–0xFFFF` (65k адресов).
+- Готового `.rdl`‑файла не будет: модель регистров строится по результатам тестирования DUT, SystemRDL используется как методологический референс.
+- Streamlit предпочтителен для дашборда.
 - FSM‑граф в духе ТЗ — это граф ваших операций (`read`, `write`, последовательности) на основе логов тестов, собранный через `networkx`; восстанавливать реальный внутренний FSM DUT не требуется.
