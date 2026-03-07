@@ -7,6 +7,8 @@ from .views import (
     render_bugs_table,
     render_fsm_graph,
     render_filters,
+    render_bug_selector,
+    render_register_access,
 )
 
 
@@ -40,6 +42,8 @@ def render():
         df_bugs=df_bugs_view,
         key="fsm_graph_selected_bug",
     )
+
+    render_register_access()
 
 
 if __name__ == "__main__":
