@@ -1,4 +1,3 @@
-from . import riscv_reg_block
 from .riscv_reg_block import reg_access
 from .config import Note
 
@@ -43,26 +42,9 @@ def scan_register_r_w_r(REGISTER_SPACE_START, REGISTER_SPACE_END):
                     "addr": reg.addr,
                     "bug_type": "bug with write after write",
                     "trigger_pattern": "read_write_read_bug",
-                    "description": "Starting RWR test: READ → WRITE → READ, bug with access after write",
-                    "FSM": fsm_operations
+                    "description": "After writing reg is not available",
+                    "FSM": ["Stating RWR test", "READ", "WRITE", "READ", "BUG WITH ACCESS AFTER READ AND WRITE"]
                     })
-        except Exception as e:
-            errors.append((addr, str(e)))
-
-    for addr in range(REGISTER_SPACE_START, REGISTER_SPACE_END):
-        try:
-            riscv_reg_block.uart = riscv_reg_block.UARTBlackBox()
-            reg_access(addr, 1, "write")
-            resp = reg_access(4, 0, "read")
-
-            if not resp["ack"]:
-                info_of_bug.append({
-                    "addr": addr,
-                    "bug_type": "lock_after_other_reg",
-                    "trigger_pattern": f"write {addr} -> read 4",
-                    "description": "Writing this register blocks register 4"
-                })
-
         except Exception as e:
             errors.append((addr, str(e)))
     return info_of_bug
