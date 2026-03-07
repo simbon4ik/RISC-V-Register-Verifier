@@ -27,7 +27,8 @@ def scan_register_r_w_r(REGISTER_SPACE_START, REGISTER_SPACE_END):
                     "addr": reg.addr,
                     "bug_type": "bug with write after read",
                     "trigger_pattern": "read_write_bug",
-                    "description": "After writing reg is not available"
+                    "description": "After writing reg is not available",
+                    "FSM": ["Stating RWR test", "READ", "WRITE", "BUG WITH ACCESS AFTER READ"]
                     })
         except Exception as e:
             errors.append((addr, str(e)))
@@ -41,7 +42,8 @@ def scan_register_r_w_r(REGISTER_SPACE_START, REGISTER_SPACE_END):
                     "addr": reg.addr,
                     "bug_type": "bug with write after write",
                     "trigger_pattern": "read_write_read_bug",
-                    "description": "After writing reg is not available"
+                    "description": ["Stating RWR test", "READ", "WRITE", "READ", "BUG WITH ACCESS AFTER READ AND WRITE"]
+                    "FSM": fsm_operations
                     })
         except Exception as e:
             errors.append((addr, str(e)))
