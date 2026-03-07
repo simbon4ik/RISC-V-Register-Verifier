@@ -1,17 +1,8 @@
-from riscv_reg_block import reg_access
-
-REGISTER_SPACE_START = 0x0000
-REGISTER_SPACE_END = 0x16
+from .riscv_reg_block import reg_access
+from .config import Note
 
 MIN_VALUE = 0x0000
 MAX_VALUE = 0xFFFF
-
-class Note:
-    def __init__(self, addr : int, value : int, ack : bool):
-        self.addr = addr
-        self.reg_value = value
-        self.ack = ack
-        self.correct_value = 0
 
 def scan_register_read_after_diff_write(REGISTER_SPACE_START, REGISTER_SPACE_END):
     
@@ -28,16 +19,14 @@ def scan_register_read_after_diff_write(REGISTER_SPACE_START, REGISTER_SPACE_END
                 if not reg.ack:
                     continue
                 if (reg.reg_value != value):
-                    reg.correct_value = value
-                    reg_with_dif_beh.append(reg)
-
                     info_of_bug.append({"addr":reg.addr, "bug_type": "bag with write different values", "trigger_pattern": "write random values", "description": f"correct value = {value}, real value = {reg.reg_value}"})
-
         except Exception as e:
             errors.append((addr, str(e)))
     return info_of_bug
     
-#    read_to_file("reg_with_dif_beh_before_ffff.txt", reg_with_dif_beh, errors)
+'''
+#
+#     read_to_file("reg_with_dif_beh_before_ffff.txt", reg_with_dif_beh, errors)
 
 
 def read_to_file(file_name, found_registers, errors):
@@ -62,3 +51,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+'''
