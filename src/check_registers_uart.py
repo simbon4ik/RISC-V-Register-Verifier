@@ -1,8 +1,12 @@
 from riscv_reg_block import reg_access
 
-RBR_ADDR = 0x40000000
-FCR_ADDR = 0x40000018
-LSR_ADDR = 0x4000001C
+RBR_ADDR = 0x0000
+FCR_ADDR = 0x0018
+LSR_ADDR = 0x001C
+LCR_ADDR = 0x000C
+DLL_ADDR = 0x0004
+DLM_ADDR = 0x0008 
+IIR_ADDR = 0x0014
 
 def test_fifo_enable():
     # Тест бита включения FIFO
@@ -29,7 +33,7 @@ def test_trigger_levels():
     for level in range(4):
         value = level << 6
         reg_access(FCR_ADDR, value, "write")
-        resp = read_reg(FCR_ADDR, 0, "read")
+        resp = reg_access(FCR_ADDR, 0, "read")
         read_val = resp["reg_value"]
         trig = (read_val >> 6) & 0x3
         if trig != level:
@@ -37,12 +41,10 @@ def test_trigger_levels():
         else:
             print("OK level")
 
-
-
 # LSR
 
 def test_lsr_read_only():
-    before = reg_access(LSR_ADDRб 0, "read")["reg_value"]
+    before = reg_access(LSR_ADDR, 0, "read")["reg_value"]
     reg_access(LSR_ADDR, 0xFF, "write")
     after = reg_access(LSR_ADDR, 0, "read")["reg_value"]
     if before != after:
@@ -92,4 +94,33 @@ def test_thre_temt_consistency():
     thre = (val >> 5) & 1
     temt = (val >> 6) & 1
     if temt == 1 and thre == 0:
+        print("BUG")
+
+#LCR and DLL/DLM
+
+DLAB_MASK = 0x80
+DLAB_SHIFT = 7
+
+def test_DLL_DLM():
+    # Тест DLL/DLM
+    val = reg_access(LCR_ADDR, 0, "read")
+    dlab_val = (val & DLAB_MASK) >> DLAB_SHIFT
+    if not dlab_val:
+        if ((reg_access(DLL_ADDR, 0, "read")["ack"]) or (reg_access(DLM_ADDR, 0, "read")["ack"])):
+            print("BUG")
+
+IIR_VALUE = 0x8F
+
+def test_ro_IIR():
+    #Тест IIR
+    result = reg_access(IIR_ADDR, IIR_VALUE, 'write')
+    if result['ack']:
+        print("BUG")
+
+LSR_VALUE = 0xFF
+
+def test_ro_LSR():
+    #Тест LSR
+    result = reg_access(LSR_ADDR, LSR_VALUE, 'write')
+    if result['ack']:
         print("BUG")
