@@ -67,26 +67,66 @@ def render_bugs_table(
     df = df_bugs.copy()
 
     if "region" not in df.columns and "addr" in df.columns:
-
         def addr_hex_to_region(addr_str: str) -> str:
             first_addr = str(addr_str).split("/")[0]
             addr_int = int(first_addr, 16)
             return addr_to_region(addr_int)
 
         region_series = df["addr"].apply(addr_hex_to_region)
-        # делаем region первым столбцом
         df.insert(0, "region", region_series)
 
     if region_filter and "region" in df.columns:
         df = df[df["region"].isin(region_filter)]
 
-    if bug_type_filter:
-        if "bug_type" in df.columns:
-            df = df[df["bug_type"].isin(bug_type_filter)]
-        elif "type" in df.columns:
-            df = df[df["type"].isin(bug_type_filter)]
+    bug_type_col = None
+    if "bug_type" in df.columns:
+        bug_type_col = "bug_type"
+    elif "type" in df.columns:
+        bug_type_col = "type"
 
-    st.dataframe(df, width="stretch")
+    if bug_type_filter and bug_type_col is not None:
+        df = df[df[bug_type_col].isin(bug_type_filter)]
+
+    if bug_type_col is None:
+        st.dataframe(df, width="stretch")
+        return df
+
+    sort_cols = [bug_type_col]
+    if "region" in df.columns:
+        sort_cols.append("region")
+    if "addr" in df.columns:
+        sort_cols.append("addr")
+    df = df.sort_values(by=sort_cols)
+
+    for bt_value, df_group in df.groupby(bug_type_col):
+        total = len(df_group)
+
+        with st.expander(f"{bug_type_col} = {bt_value} ({total} bugs)"):
+
+            if "addr" in df_group.columns:
+                agg = (
+                    df_group.groupby("addr")
+                    .size()
+                    .reset_index(name="count")
+                    .sort_values("count", ascending=False)
+                )
+                agg_total = agg["count"].sum()
+                agg["share"] = (agg["count"] / agg_total * 100).round(1)
+
+                agg = agg.rename(
+                    columns={
+                        "addr": "Address",
+                        "count": "Occurrences",
+                        "share": "Share, %",
+                    }
+                )
+
+                st.markdown("**Summary by address**")
+                st.dataframe(agg, width="stretch")
+
+            st.markdown("**Details**")
+            st.dataframe(df_group, width="stretch")
+
     return df
 
 
@@ -158,13 +198,17 @@ def _build_node_trace(
     states,
     positions,
     highlighted_states: set[str],
+    labels: dict[str, str] | None = None,
 ) -> go.Scatter:
+    if labels is None:
+        labels = {s: s for s in states}
+
     node_x, node_y, node_text, node_colors = zip(
         *[
             (
                 positions[s][0],
                 positions[s][1],
-                s,
+                labels.get(s, s),  # подпись для вершины
                 "#d62728" if s in highlighted_states else FSM_NODE_COLOR,
             )
             for s in states
@@ -245,7 +289,6 @@ def _build_label_trace(
 
 def render_fsm_graph(
     df_bugs: pd.DataFrame | None = None,
-    selected_bug_idx: int | None = None,
     states=FSM_STATES,
     transitions=FSM_TRANSITIONS,
     positions=FSM_POSITIONS,
@@ -254,12 +297,41 @@ def render_fsm_graph(
 ):
     st.subheader(title)
 
-    bug_type_value = _get_bug_type(df_bugs, selected_bug_idx)
-    highlighted_states, highlighted_edges = _get_highlighted_elements(
-        bug_type_value
-    )
+    labels = {s: s for s in states}
+    highlighted_states: set[str] = set()
+    highlighted_edges: set[tuple[str, str]] = set()
 
-    node_trace = _build_node_trace(states, positions, highlighted_states)
+    if df_bugs is not None and not df_bugs.empty:
+        bug_indices = sorted(df_bugs.index.tolist())
+        selected_idx = st.selectbox(
+            "Bug id for FSM",
+            options=bug_indices,
+            key="fsm_bug_id_selector",
+        )
+        row = df_bugs.loc[selected_idx]
+
+        bug_type = row.get("bug_type") or row.get("type")
+        trigger = row.get("trigger_pattern")
+        addr = row.get("addr")
+
+        # пример: подсвечиваем и переименовываем проблемное состояние
+        bug_state = row.get("fsm_bug_state")  # если ты это поле добавишь
+        if bug_state in states:
+            highlighted_states.add(bug_state)
+            extra = f"{bug_type}" if bug_type is not None else "bug"
+            labels[bug_state] = f"{bug_state}\n({extra})"
+
+        # можно дополнительно добавить адрес/trigger в подписи других состояний
+        if addr is not None:
+            labels["IDLE"] = f"IDLE\n(addr {addr})"
+
+        # если есть fsm_path_states — можем подсветить весь путь
+        path_states = row.get("fsm_path_states")
+        if isinstance(path_states, list):
+            highlighted_states.update(path_states)
+            # построить highlighted_edges из path_states, как раньше
+
+    node_trace = _build_node_trace(states, positions, highlighted_states, labels)
     edge_trace, edge_hi_trace, edge_text = _build_edge_traces(
         transitions, positions, highlighted_edges
     )
@@ -272,7 +344,6 @@ def render_fsm_graph(
         margin=FSM_MARGIN,
         height=FSM_FIG_HEIGHT,
     )
-
     st.plotly_chart(fig, width="stretch", key=key)
 
 
