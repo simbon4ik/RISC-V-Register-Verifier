@@ -12,9 +12,9 @@ def scan_register_read_chain(
 
     for addr in range(REGISTER_SPACE_START, REGISTER_SPACE_END):
         try:
-            fsm_arr = []
+            cnt = 0
             resp = reg_access(addr, 0, "read")
-            fsm_arr.append("READ")
+            cnt += 1
             initial_reg = Note(addr, resp["reg_value"], resp["ack"])
             if not initial_reg.ack:
                 continue
@@ -22,13 +22,13 @@ def scan_register_read_chain(
 
             for i in range(1, NUM_READS):
                 resp = reg_access(addr, 0, "read")
-                fsm_arr.append("READ")
+                cnt += 1
                 reg = Note(addr, resp["reg_value"], resp["ack"])
                 if not reg.ack:
                     continue
                 if reg.reg_value != initial_value:
                     info_of_bug.append({
-                        "FSM": fsm_arr,
+                        "FSM": [f"READ_{cnt}", "ERROR WITH READ AFTER READ"],
                         "addr": reg.addr,
                         "bug_type": "bug with read after read",
                         "trigger_pattern": "read stability",
