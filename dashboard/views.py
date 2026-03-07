@@ -9,9 +9,6 @@ from .config import (
     APP_TITLE,
     PAGE_LAYOUT,
     FSM_TITLE,
-    FSM_STATES,
-    FSM_TRANSITIONS,
-    FSM_POSITIONS,
     FSM_NODE_SIZE,
     FSM_NODE_COLOR,
     FSM_EDGE_COLOR,
@@ -66,26 +63,68 @@ def render_bugs_table(
     df = df_bugs.copy()
 
     if "region" not in df.columns and "addr" in df.columns:
-
         def addr_hex_to_region(addr_str: str) -> str:
             first_addr = str(addr_str).split("/")[0]
             addr_int = int(first_addr, 16)
             return addr_to_region(addr_int)
 
         region_series = df["addr"].apply(addr_hex_to_region)
-        # делаем region первым столбцом
         df.insert(0, "region", region_series)
 
     if region_filter and "region" in df.columns:
         df = df[df["region"].isin(region_filter)]
 
-    if bug_type_filter:
-        if "bug_type" in df.columns:
-            df = df[df["bug_type"].isin(bug_type_filter)]
-        elif "type" in df.columns:
-            df = df[df["type"].isin(bug_type_filter)]
+    bug_type_col = None
+    if "bug_type" in df.columns:
+        bug_type_col = "bug_type"
+    elif "type" in df.columns:
+        bug_type_col = "type"
 
-    st.dataframe(df, width="stretch")
+    if bug_type_filter and bug_type_col is not None:
+        df = df[df[bug_type_col].isin(bug_type_filter)]
+
+    if bug_type_col is None:
+        st.dataframe(df, width="stretch")
+        return df
+
+    sort_cols = [bug_type_col]
+    if "region" in df.columns:
+        sort_cols.append("region")
+    if "addr" in df.columns:
+        sort_cols.append("addr")
+    df = df.sort_values(by=sort_cols)
+
+    for bt_value, df_group in df.groupby(bug_type_col):
+        total = len(df_group)
+
+        with st.expander(f"{bug_type_col} = {bt_value} ({total} bugs)"):
+
+            if "addr" in df_group.columns:
+                agg = (
+                    df_group.groupby("addr")
+                    .size()
+                    .reset_index(name="count")
+                    .sort_values("count", ascending=False)
+                )
+                agg_total = agg["count"].sum()
+                agg["share"] = (agg["count"] / agg_total * 100).round(1)
+
+                agg = agg.rename(
+                    columns={
+                        "addr": "Address",
+                        "count": "Occurrences",
+                        "share": "Share, %",
+                    }
+                )
+
+                st.markdown("**Summary by address**")
+                st.dataframe(agg, width="stretch")
+
+            st.markdown("**Details**")
+
+            cols_to_show = [c for c in df_group.columns if c != "FSM"]
+            st.dataframe(df_group[cols_to_show], width="stretch")
+
     return df
 
 
@@ -116,94 +155,50 @@ def render_region_heatmap(df_events: pd.DataFrame):
     st.plotly_chart(fig, width="stretch", key="region_heatmap")
 
 
-def _get_bug_type(
-    df_bugs: pd.DataFrame | None,
-    selected_bug_idx: int | None,
-) -> str | None:
-    if (
-        df_bugs is None
-        or selected_bug_idx is None
-        or not (0 <= selected_bug_idx < len(df_bugs))
-    ):
-        return None
+def _build_node_trace_for_path(path: list[str]) -> go.Scatter:
+    states = list(dict.fromkeys(path))
+    positions = {s: (i, 0.0) for i, s in enumerate(states)}
 
-    row = df_bugs.iloc[selected_bug_idx]
-    value = row.get("bug_type") or row.get("type")
-    return str(value) if value is not None else None
+    node_x, node_y, node_colors, node_text = [], [], [], []
+    n = len(states)
 
+    for idx, s in enumerate(states):
+        x, y = positions[s]
+        node_x.append(x)
+        node_y.append(y)
+        node_text.append(s)
 
-def _get_highlighted_elements(
-    bug_type_value: str | None,
-) -> tuple[set[str], set[tuple[str, str]]]:
-    highlighted_states: set[str] = set()
-    highlighted_edges: set[tuple[str, str]] = set()
+        if idx == 0:
+            color = "#2ca02c"
+        elif idx == n - 1:
+            color = "#d62728"
+        else:
+            color = FSM_NODE_COLOR
 
-    if not bug_type_value:
-        return highlighted_states, highlighted_edges
-
-    bt = bug_type_value.lower()
-    if "deadlock" in bt:
-        highlighted_edges.add(("WAIT_ACK", "DEADLOCK"))
-        highlighted_states.update({"WAIT_ACK", "DEADLOCK"})
-    if "stale" in bt:
-        highlighted_states.add("READ")
-    if "overflow" in bt or "glitch" in bt:
-        highlighted_states.add("WRITE")
-
-    return highlighted_states, highlighted_edges
-
-
-def _build_node_trace(
-    states,
-    positions,
-    highlighted_states: set[str],
-) -> go.Scatter:
-    node_x, node_y, node_text, node_colors = zip(
-        *[
-            (
-                positions[s][0],
-                positions[s][1],
-                s,
-                "#d62728" if s in highlighted_states else FSM_NODE_COLOR,
-            )
-            for s in states
-        ]
-    )
+        node_colors.append(color)
 
     return go.Scatter(
         x=node_x,
         y=node_y,
-        mode="markers+text",
-        text=node_text,
-        textposition="top center",
+        mode="markers",
         marker=dict(size=FSM_NODE_SIZE, color=node_colors),
+        text=node_text,
         hoverinfo="text",
         showlegend=False,
-    )
+    ), positions
 
 
-def _build_edge_traces(
-    transitions,
-    positions,
-    highlighted_edges: set[tuple[str, str]],
-) -> tuple[go.Scatter, go.Scatter, list[tuple[float, float, str]]]:
-    edge_x, edge_y, edge_x_hi, edge_y_hi, edge_text = [], [], [], [], []
+def _build_edge_trace_for_path(
+        path: list[str], positions: dict[str, tuple[float, float]]
+        ) -> go.Scatter:
+    edge_x, edge_y = [], []
+    for s0, s1 in zip(path, path[1:]):
+        x0, y0 = positions[s0]
+        x1, y1 = positions[s1]
+        edge_x += [x0, x1, None]
+        edge_y += [y0, y1, None]
 
-    for src, dst, label in transitions:
-        x0, y0 = positions[src]
-        x1, y1 = positions[dst]
-
-        xs, ys = [x0, x1, None], [y0, y1, None]
-        if (src, dst) in highlighted_edges:
-            edge_x_hi += xs
-            edge_y_hi += ys
-        else:
-            edge_x += xs
-            edge_y += ys
-
-        edge_text.append(((x0 + x1) / 2.0, (y0 + y1) / 2.0, label))
-
-    edge_trace = go.Scatter(
+    return go.Scatter(
         x=edge_x,
         y=edge_y,
         mode="lines",
@@ -212,59 +207,35 @@ def _build_edge_traces(
         showlegend=False,
     )
 
-    edge_hi_trace = go.Scatter(
-        x=edge_x_hi,
-        y=edge_y_hi,
-        mode="lines",
-        line=dict(color="#d62728", width=FSM_EDGE_WIDTH + 1),
-        hoverinfo="none",
-        showlegend=False,
-    )
-
-    return edge_trace, edge_hi_trace, edge_text
-
-
-def _build_label_trace(
-    edge_text: list[tuple[float, float, str]],
-) -> go.Scatter:
-    if not edge_text:
-        return go.Scatter(x=[], y=[], mode="text", text=[])
-
-    label_x, label_y, label_text = zip(*edge_text)
-    return go.Scatter(
-        x=label_x,
-        y=label_y,
-        mode="text",
-        text=label_text,
-        textposition="middle center",
-        hoverinfo="none",
-        showlegend=False,
-    )
-
 
 def render_fsm_graph(
     df_bugs: pd.DataFrame | None = None,
-    selected_bug_idx: int | None = None,
-    states=FSM_STATES,
-    transitions=FSM_TRANSITIONS,
-    positions=FSM_POSITIONS,
     title: str = FSM_TITLE,
     key: str = "fsm_graph",
 ):
     st.subheader(title)
 
-    bug_type_value = _get_bug_type(df_bugs, selected_bug_idx)
-    highlighted_states, highlighted_edges = _get_highlighted_elements(
-        bug_type_value
-    )
+    if df_bugs is None or df_bugs.empty or "FSM" not in df_bugs.columns:
+        st.info("No FSM data for bugs")
+        return
 
-    node_trace = _build_node_trace(states, positions, highlighted_states)
-    edge_trace, edge_hi_trace, edge_text = _build_edge_traces(
-        transitions, positions, highlighted_edges
+    bug_indices = sorted(df_bugs.index.tolist())
+    selected_idx = st.selectbox(
+        "Bug id for FSM",
+        options=bug_indices,
+        key="fsm_bug_id_selector",
     )
-    label_trace = _build_label_trace(edge_text)
+    row = df_bugs.loc[selected_idx]
 
-    fig = go.Figure(data=[edge_trace, edge_hi_trace, node_trace, label_trace])
+    fsm_path = row.get("FSM")
+    if not isinstance(fsm_path, list) or len(fsm_path) < 2:
+        st.info("FSM path is empty or too short")
+        return
+
+    node_trace, positions = _build_node_trace_for_path(fsm_path)
+    edge_trace = _build_edge_trace_for_path(fsm_path, positions)
+
+    fig = go.Figure(data=[edge_trace, node_trace])
     fig.update_layout(
         xaxis=dict(visible=False),
         yaxis=dict(visible=False),

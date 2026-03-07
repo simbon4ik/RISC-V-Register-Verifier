@@ -1,4 +1,4 @@
-from .data import load_register_events, load_bugs_data
+from .data import load_register_events
 from .views import (
     init_page,
     render_sidebar,
@@ -31,7 +31,9 @@ def render():
 
     df_filtered = df_events.copy()
     if bug_type_filter:
-        df_filtered = df_filtered[df_filtered["bug_type"].isin(bug_type_filter)]
+        df_filtered = df_filtered[
+            df_filtered["bug_type"].isin(bug_type_filter)
+            ]
 
     if region_filter:
         df_filtered = df_filtered[df_filtered["region"].isin(region_filter)]
@@ -40,10 +42,9 @@ def render():
     render_region_heatmap(df_filtered)
 
     df_bugs_view = render_bugs_table(df_events, bug_type_filter, region_filter)
-    selected_bug_idx = render_bug_selector(df_bugs_view)
+
     render_fsm_graph(
         df_bugs=df_bugs_view,
-        selected_bug_idx=selected_bug_idx,
         key="fsm_graph_selected_bug",
     )
 
