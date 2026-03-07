@@ -6,5 +6,5 @@ from .test_w_before_ffff import scan_register_read_after_diff_write as sdwf
 def run_test(START_ADDR, END_ADDR):
     result = srwr(START_ADDR, END_ADDR)
     result += sdwf(START_ADDR, END_ADDR)
-    # result + srdw()
+    result += srdw(START_ADDR, END_ADDR)
     return result

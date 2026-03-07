@@ -37,7 +37,6 @@ def scan_register_r_w_r(REGISTER_SPACE_START, REGISTER_SPACE_END):
             resp = reg_access(addr, 0, "read")            
             reg = Note(addr, resp["reg_value"], resp["ack"])
             if (reg.addr in available_registers and not reg.ack):
-                print("HERE")
                 info_of_bug.append({
                     "addr": reg.addr,
                     "bug_type": "bug with write after write",
