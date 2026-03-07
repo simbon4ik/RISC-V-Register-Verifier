@@ -42,6 +42,7 @@ def render_sidebar():
     st.sidebar.header(SIDEBAR_HEADER)
     if st.sidebar.button(SIDEBAR_RUN_BUTTON):
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        
         st.sidebar.write(f"{SIDEBAR_RUN_MESSAGE} {now}")
 
 

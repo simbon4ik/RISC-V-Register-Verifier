@@ -15,7 +15,6 @@ DEMO_EVENTS = [
     {"addr": 0x1102, "bug_type": "abcd"},
 ]
 
-# FIX: корректное объявление списка словарей DEMO_BUGS
 DEMO_BUGS = [
     {
         "addr": "0x0042",
