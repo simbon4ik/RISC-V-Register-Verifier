@@ -197,13 +197,17 @@ def _build_node_trace(
     states,
     positions,
     highlighted_states: set[str],
+    labels: dict[str, str] | None = None,
 ) -> go.Scatter:
+    if labels is None:
+        labels = {s: s for s in states}
+
     node_x, node_y, node_text, node_colors = zip(
         *[
             (
                 positions[s][0],
                 positions[s][1],
-                s,
+                labels.get(s, s),  # подпись для вершины
                 "#d62728" if s in highlighted_states else FSM_NODE_COLOR,
             )
             for s in states
@@ -292,7 +296,9 @@ def render_fsm_graph(
 ):
     st.subheader(title)
 
-    bug_type_value = None
+    labels = {s: s for s in states}
+    highlighted_states: set[str] = set()
+    highlighted_edges: set[tuple[str, str]] = set()
 
     if df_bugs is not None and not df_bugs.empty:
         bug_indices = sorted(df_bugs.index.tolist())
@@ -301,15 +307,30 @@ def render_fsm_graph(
             options=bug_indices,
             key="fsm_bug_id_selector",
         )
-
         row = df_bugs.loc[selected_idx]
-        bug_type_value = row.get("bug_type") or row.get("type")
 
-    highlighted_states, highlighted_edges = _get_highlighted_elements(
-        str(bug_type_value) if bug_type_value is not None else None
-    )
+        bug_type = row.get("bug_type") or row.get("type")
+        trigger = row.get("trigger_pattern")
+        addr = row.get("addr")
 
-    node_trace = _build_node_trace(states, positions, highlighted_states)
+        # пример: подсвечиваем и переименовываем проблемное состояние
+        bug_state = row.get("fsm_bug_state")  # если ты это поле добавишь
+        if bug_state in states:
+            highlighted_states.add(bug_state)
+            extra = f"{bug_type}" if bug_type is not None else "bug"
+            labels[bug_state] = f"{bug_state}\n({extra})"
+
+        # можно дополнительно добавить адрес/trigger в подписи других состояний
+        if addr is not None:
+            labels["IDLE"] = f"IDLE\n(addr {addr})"
+
+        # если есть fsm_path_states — можем подсветить весь путь
+        path_states = row.get("fsm_path_states")
+        if isinstance(path_states, list):
+            highlighted_states.update(path_states)
+            # построить highlighted_edges из path_states, как раньше
+
+    node_trace = _build_node_trace(states, positions, highlighted_states, labels)
     edge_trace, edge_hi_trace, edge_text = _build_edge_traces(
         transitions, positions, highlighted_edges
     )
@@ -322,7 +343,6 @@ def render_fsm_graph(
         margin=FSM_MARGIN,
         height=FSM_FIG_HEIGHT,
     )
-
     st.plotly_chart(fig, width="stretch", key=key)
 
 
