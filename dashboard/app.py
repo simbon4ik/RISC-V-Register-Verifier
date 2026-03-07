@@ -1,5 +1,5 @@
-from data import load_register_events, load_bugs_data
-from views import (
+from .data import load_register_events, load_bugs_data
+from .views import (
     init_page,
     render_sidebar,
     render_kpi,
@@ -11,7 +11,7 @@ from views import (
 )
 
 
-def main():
+def render():
     init_page()
     render_sidebar()
 
@@ -40,7 +40,3 @@ def main():
         selected_bug_idx=selected_bug_idx,
         key="fsm_graph_selected_bug",
     )
-
-
-if __name__ == "__main__":
-    main()

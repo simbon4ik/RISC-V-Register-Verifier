@@ -1,5 +1,5 @@
 import pandas as pd
-from config import REGION_SIZE_BYTES, DEMO_EVENTS, DEMO_BUGS
+from .config import REGION_SIZE_BYTES, DEMO_EVENTS, DEMO_BUGS
 
 
 def addr_to_region(addr: int, size: int = REGION_SIZE_BYTES) -> str:

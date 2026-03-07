@@ -2,10 +2,10 @@ import streamlit as st
 import plotly.express as px
 import plotly.graph_objects as go
 import pandas as pd
-from data import addr_to_region
+from .data import addr_to_region
 from datetime import datetime
 
-from config import (
+from .config import (
     APP_TITLE,
     PAGE_LAYOUT,
     FSM_TITLE,
