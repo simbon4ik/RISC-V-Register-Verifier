@@ -15,10 +15,12 @@ def scan_register_write_chain(
 
     for addr in range(REGISTER_SPACE_START, REGISTER_SPACE_END):
         try:
+            fsm_arr = []
             last_value = None
             for i in range(NUM_WRITES):
                 value = random.randint(MIN_VALUE, MAX_VALUE)
                 resp = reg_access(addr, value, "write")
+                fsm_arr.append("WRITE")
                 reg = Note(addr, resp["reg_value"], resp["ack"])
                 if not reg.ack:
                     break
@@ -28,11 +30,13 @@ def scan_register_write_chain(
                 continue
             
             resp = reg_access(addr, 0, "read")
+            fsm_arr.append("READ")
             reg = Note(addr, resp["reg_value"], resp["ack"])
             if not reg.ack:
                 continue
             if reg.reg_value != last_value:
                 info_of_bug.append({
+                    "FSM": fsm_arr,
                     "addr": reg.addr,
                     "bug_type": "bug with write after write",
                     "trigger_pattern": "write overwrite",
