@@ -5,10 +5,12 @@ from .test_fuzz_rw import scan_register_fuzz_rw as frw
 from .test_read_chain import scan_register_read_chain as rc
 from .test_write_chain import scan_register_write_chain as wc
 from .test_oob_address import scan_oob_addresses as soob
+from .find_trigger_register import scan_trigger_register as str
 
 
 def run_test(START_ADDR, END_ADDR):
-    result = srwr(START_ADDR, END_ADDR)
+    result = str(START_ADDR, END_ADDR)
+    result += srwr(START_ADDR, END_ADDR)
     result += sdwf(START_ADDR, END_ADDR)
     result += srdw(START_ADDR, END_ADDR)
     result += frw(START_ADDR, END_ADDR)
