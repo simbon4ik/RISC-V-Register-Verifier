@@ -66,26 +66,66 @@ def render_bugs_table(
     df = df_bugs.copy()
 
     if "region" not in df.columns and "addr" in df.columns:
-
         def addr_hex_to_region(addr_str: str) -> str:
             first_addr = str(addr_str).split("/")[0]
             addr_int = int(first_addr, 16)
             return addr_to_region(addr_int)
 
         region_series = df["addr"].apply(addr_hex_to_region)
-        # делаем region первым столбцом
         df.insert(0, "region", region_series)
 
     if region_filter and "region" in df.columns:
         df = df[df["region"].isin(region_filter)]
 
-    if bug_type_filter:
-        if "bug_type" in df.columns:
-            df = df[df["bug_type"].isin(bug_type_filter)]
-        elif "type" in df.columns:
-            df = df[df["type"].isin(bug_type_filter)]
+    bug_type_col = None
+    if "bug_type" in df.columns:
+        bug_type_col = "bug_type"
+    elif "type" in df.columns:
+        bug_type_col = "type"
 
-    st.dataframe(df, width="stretch")
+    if bug_type_filter and bug_type_col is not None:
+        df = df[df[bug_type_col].isin(bug_type_filter)]
+
+    if bug_type_col is None:
+        st.dataframe(df, width="stretch")
+        return df
+
+    sort_cols = [bug_type_col]
+    if "region" in df.columns:
+        sort_cols.append("region")
+    if "addr" in df.columns:
+        sort_cols.append("addr")
+    df = df.sort_values(by=sort_cols)
+
+    for bt_value, df_group in df.groupby(bug_type_col):
+        total = len(df_group)
+
+        with st.expander(f"{bug_type_col} = {bt_value} ({total} bugs)"):
+
+            if "addr" in df_group.columns:
+                agg = (
+                    df_group.groupby("addr")
+                    .size()
+                    .reset_index(name="count")
+                    .sort_values("count", ascending=False)
+                )
+                agg_total = agg["count"].sum()
+                agg["share"] = (agg["count"] / agg_total * 100).round(1)
+
+                agg = agg.rename(
+                    columns={
+                        "addr": "Address",
+                        "count": "Occurrences",
+                        "share": "Share, %",
+                    }
+                )
+
+                st.markdown("**Summary by address**")
+                st.dataframe(agg, width="stretch")
+
+            st.markdown("**Details**")
+            st.dataframe(df_group, width="stretch")
+
     return df
 
 
@@ -244,7 +284,6 @@ def _build_label_trace(
 
 def render_fsm_graph(
     df_bugs: pd.DataFrame | None = None,
-    selected_bug_idx: int | None = None,
     states=FSM_STATES,
     transitions=FSM_TRANSITIONS,
     positions=FSM_POSITIONS,
@@ -253,9 +292,21 @@ def render_fsm_graph(
 ):
     st.subheader(title)
 
-    bug_type_value = _get_bug_type(df_bugs, selected_bug_idx)
+    bug_type_value = None
+
+    if df_bugs is not None and not df_bugs.empty:
+        bug_indices = sorted(df_bugs.index.tolist())
+        selected_idx = st.selectbox(
+            "Bug id for FSM",
+            options=bug_indices,
+            key="fsm_bug_id_selector",
+        )
+
+        row = df_bugs.loc[selected_idx]
+        bug_type_value = row.get("bug_type") or row.get("type")
+
     highlighted_states, highlighted_edges = _get_highlighted_elements(
-        bug_type_value
+        str(bug_type_value) if bug_type_value is not None else None
     )
 
     node_trace = _build_node_trace(states, positions, highlighted_states)
@@ -294,13 +345,3 @@ def render_filters(
     )
 
     return bug_type_filter, region_filter
-
-
-def render_bug_selector(df_bugs: pd.DataFrame | None) -> int | None:
-    if df_bugs is None or df_bugs.empty:
-        return None
-
-    st.sidebar.subheader("Bug details")
-    bug_indices = df_bugs.index.tolist()
-    selected_idx = st.sidebar.selectbox("Bug index", bug_indices)
-    return selected_idx
