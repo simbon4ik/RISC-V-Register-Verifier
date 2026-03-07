@@ -43,7 +43,7 @@ def scan_register_r_w_r(REGISTER_SPACE_START, REGISTER_SPACE_END):
                     "addr": reg.addr,
                     "bug_type": "bug with write after write",
                     "trigger_pattern": "read_write_read_bug",
-                    "description": ["Stating RWR test", "READ", "WRITE", "READ", "BUG WITH ACCESS AFTER READ AND WRITE"]
+                    "description": "Starting RWR test: READ → WRITE → READ, bug with access after write",
                     "FSM": fsm_operations
                     })
         except Exception as e:

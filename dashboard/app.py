@@ -8,6 +8,7 @@ from .views import (
     render_fsm_graph,
     render_filters,
     render_bug_selector,
+    render_register_access,
 )
 
 
@@ -42,6 +43,8 @@ def render():
         selected_bug_idx=selected_bug_idx,
         key="fsm_graph_selected_bug",
     )
+
+    render_register_access()
 
 
 if __name__ == "__main__":
